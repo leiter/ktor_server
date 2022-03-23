@@ -1,0 +1,1 @@
+rootProject.name = "cut.the.crap.ktor-server"
