@@ -15,7 +15,10 @@ class RefreshTokenRepository(db: CoroutineDatabase) : Repository<RefreshTokenRes
         val refreshToken = mongoCollection.findOneById(entry.id)
         return refreshToken?.let {
             update(entry)
-        } ?: add(entry)
+        } ?: kotlin.run {
+            delete(entry.id)
+            add(entry)
+        }
     }
 
 }

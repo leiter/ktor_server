@@ -52,4 +52,13 @@ interface Repository<T : Any> {
             throw Exception("Cannot update item")
         }
     }
+
+//    suspend fun uniqueId(entry: T): String {
+//        var newId = entry.id
+//        while (mongoCollection.findOne(Model::id eq newId) != null){
+//            newId = ObjectId().toString()
+//        }
+//        return newId
+//    }
+
 }

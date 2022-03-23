@@ -1,6 +1,7 @@
 package cut.the.crap.di
 
 import cut.the.crap.chatroom.RoomController
+import cut.the.crap.repositories.FileMetaDataRepository
 import cut.the.crap.repositories.MessageDataRepository
 import cut.the.crap.repositories.RefreshTokenRepository
 import cut.the.crap.repositories.UserRepository
@@ -25,5 +26,8 @@ val mainModule = module {
     }
     single {
         RefreshTokenRepository(get())
+    }
+    single {
+        FileMetaDataRepository(get())
     }
 }

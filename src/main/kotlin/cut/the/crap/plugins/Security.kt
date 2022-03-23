@@ -38,7 +38,8 @@ fun Application.configureSecurity() {
                 .build()
             )
             validate { jwtCredential ->
-                if (jwtCredential.payload.subject != ""){
+
+                if (jwtCredential.payload.subject != ""){  //todo 
                     JWTPrincipal(jwtCredential.payload)
                 } else {
                     null

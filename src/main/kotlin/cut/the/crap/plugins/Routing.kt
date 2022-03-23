@@ -1,6 +1,7 @@
 package cut.the.crap.plugins
 
 import cut.the.crap.chatroom.RoomController
+import cut.the.crap.repositories.FileMetaDataRepository
 import cut.the.crap.repositories.RefreshTokenRepository
 import cut.the.crap.repositories.UserRepository
 import cut.the.crap.routes.*
@@ -13,6 +14,7 @@ fun Application.configureRouting() {
     val roomController by inject<RoomController>()
     val userRepository by inject<UserRepository>()
     val refreshTokenRepository by inject<RefreshTokenRepository>()
+    val fileMetaDataRepository by inject<FileMetaDataRepository>()
 
     install(Routing) {
         chatSocket(roomController)
@@ -20,6 +22,6 @@ fun Application.configureRouting() {
         login(userRepository, refreshTokenRepository)
         register(userRepository, refreshTokenRepository)
         refreshToken(refreshTokenRepository)
-        fileStorage()
+        fileStorage(fileMetaDataRepository)
     }
 }

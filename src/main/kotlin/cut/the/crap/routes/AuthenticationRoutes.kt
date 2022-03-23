@@ -4,6 +4,7 @@ import at.favre.lib.crypto.bcrypt.BCrypt
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import cut.the.crap.data.*
+import cut.the.crap.data.ServerErrorMessage.UserEmailAlreadyExists
 import cut.the.crap.getEnvironmentString
 import cut.the.crap.longProperty
 import cut.the.crap.repositories.RefreshTokenRepository
@@ -36,8 +37,8 @@ fun Route.login(userRepository: UserRepository, refreshTokenRepository: RefreshT
 
     authenticate("auth-jwt") {
         get("/hello") {
-            val principal = call.principal<JWTPrincipal>()
-            val username = principal!!.payload.getClaim("username").asString()
+            val principal = call.principal<JWTPrincipal>()!!
+            val username = principal.payload.getClaim("username").asString()
             val expiresAt = principal.expiresAt?.time?.minus(System.currentTimeMillis())
             call.respondText("Hello, $username! Token is expired at $expiresAt ms.")
         }
@@ -57,7 +58,8 @@ fun Route.refreshToken(refreshTokenRepository: RefreshTokenRepository) {
 
         val currentTime = System.currentTimeMillis()
 
-        if (token != null && token.expiresAt > currentTime) {
+//                && token.expiresAt > currentTime
+        if (token != null ) {
             val tokenPair = generateTokenPair(token.userId, context, refreshTokenRepository)
             call.respond(tokenPair)
         } else
@@ -95,14 +97,16 @@ fun Route.register(userRepository: UserRepository, refreshTokenRepository: Refre
             val hashedPassword = Base64.getEncoder().encodeToString(
                 BCrypt.withDefaults().hash(10, loginInput.password.toByteArray(StandardCharsets.UTF_8))
             )
-            val user = userRepository.add(User(email = loginInput.email, hashedPassword = hashedPassword))
+            val user = userRepository.add(User(email = loginInput.email, hashedPassword = hashedPassword, isAnonymous = false))
 
             val tokenPair = generateTokenPair(user.id, context, refreshTokenRepository)
 
             call.respond(UserResponse(tokenPair, user))
         } else {
 //            error("No such user by that email")
-            call.respond(HttpStatusCode.Conflict)  // empty user is anonymous
+            val newUser = User(email = "", hashedPassword = "", isAnonymous = true)
+
+            call.respond(HttpStatusCode.Conflict, UserEmailAlreadyExists(newUser))
         }
     }
 
