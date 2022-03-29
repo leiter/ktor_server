@@ -23,12 +23,9 @@ fun Application.configureSecurity() {
     }
 
     intercept(ApplicationCallPipeline.Features) {
-
         val sessionId = messageDataRepository.getChatRoom(call.parameters["sessionId"]).id
-
-        messageDataRepository.getAllChatMessages(sessionId)
-
-        if (call.sessions.get<ChatSession>() == null) {
+//        messageDataRepository.getAllChatMessages(sessionId)
+        if (call.sessions.get<ChatSession>() == null ) {
             val username = call.parameters["username"] ?: "Guest"
             call.sessions.set(ChatSession(username, sessionId))
         }

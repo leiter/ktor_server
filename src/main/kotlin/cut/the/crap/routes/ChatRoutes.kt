@@ -40,10 +40,7 @@ fun Route.chatSocket(roomController: RoomController) {
                         )
                     }
                 }
-
-                outgoing.send(Frame.Text(createJwtToken(TokenData.ChatAccessToken(session.sessionId),call)))
-
-
+//                outgoing.send(Frame.Text(createJwtToken(TokenData.ChatAccessToken(session.sessionId),call)))
             } catch (e: MemberAlreadyExistsException) {
                 call.respond(HttpStatusCode.Conflict)
             } catch (e: Exception) {

@@ -36,9 +36,8 @@ class RoomController(
             username = senderUsername,
             timestamp = System.currentTimeMillis()
         )
-
-        members.values.forEach { member ->
-            messageDataRepository.addChatMessage(messageEntity, sessionId)
+        messageDataRepository.addChatMessage(messageEntity, sessionId)
+        members.values.filter { it.sessionId == sessionId }.forEach { member ->
             val parsedMessage = Json.encodeToString(messageEntity)
             member.socket.send(Frame.Text(parsedMessage))
         }

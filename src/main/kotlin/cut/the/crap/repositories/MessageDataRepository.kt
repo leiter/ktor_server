@@ -29,7 +29,7 @@ class MessageDataRepository(
     }
 
     suspend fun getAllChatMessages(sessionId: String?): List<Message> {
-        return if(sessionId==null) emptyList() else getChatRoom(sessionId).allMessages
+        return if(sessionId==null) emptyList() else getChatRoom(sessionId).allMessages.reversed()
     }
 
     suspend fun addChatMessage(message: Message, sessionId: String) {
