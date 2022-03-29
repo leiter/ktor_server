@@ -27,9 +27,10 @@ class RoomController(
             sessionId = sessionId,
             socket = socket
         )
+
     }
 
-    suspend fun sendMessage(senderUsername: String, message: String) {
+    suspend fun sendMessage(senderUsername: String, message: String, sessionId: String) {
         val messageEntity = Message(
             text = message,
             username = senderUsername,
@@ -37,14 +38,14 @@ class RoomController(
         )
 
         members.values.forEach { member ->
-            messageDataRepository.add(messageEntity)
+            messageDataRepository.addChatMessage(messageEntity, sessionId)
             val parsedMessage = Json.encodeToString(messageEntity)
             member.socket.send(Frame.Text(parsedMessage))
         }
     }
 
-    suspend fun getAllMessages(): List<Message> {  //sessionID
-        return messageDataRepository.getAll()
+    suspend fun getAllMessages(sessionId: String?): List<Message> {
+        return messageDataRepository.getAllChatMessages(sessionId)
     }
 
     suspend fun tryDisconnect(username: String) {

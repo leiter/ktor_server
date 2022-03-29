@@ -1,6 +1,7 @@
 package cut.the.crap.data
 
 import io.ktor.http.cio.websocket.*
+import kotlinx.serialization.SerialName
 import org.bson.types.ObjectId
 import kotlinx.serialization.Serializable
 import org.bson.codecs.pojo.annotations.BsonId
@@ -10,18 +11,28 @@ interface Model {
     val id: String
 }
 
+
+
+
 // Incoming and Outgoing
 @Serializable
 data class User(
+    @BsonId
     override val id: String = ObjectId().toString(),
     val email: String = "",
     val hashedPassword: String,
-    var isAnonymous: Boolean
+    var isAnonymous: Boolean,
+    val contacts: List<String> = emptyList(),
+    val chatIds: List<String> = emptyList()
 ) : Model
 
 
-
-
+@Serializable
+data class ChatRoom(
+    @BsonId override val id: String = ObjectId().toString(),
+    val userAccess: Map<String, Long> = hashMapOf(),  // userId and timestamp
+    val allMessages: List<Message> = emptyList()
+) : Model
 
 @Serializable
 data class Message(
@@ -70,6 +81,11 @@ data class RefreshTokenRequest(
 data class UserResponse(
     val tokenPair: TokenPairResponse,
     val user: User
+)
+
+@Serializable
+data class ChatToken(
+    val token: String
 )
 
 @Serializable

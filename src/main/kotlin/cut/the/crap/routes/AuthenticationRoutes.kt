@@ -59,7 +59,7 @@ fun Route.refreshToken(refreshTokenRepository: RefreshTokenRepository) {
         val currentTime = System.currentTimeMillis()
 
 //                && token.expiresAt > currentTime
-        if (token != null ) {
+        if (token != null) {
             val tokenPair = generateTokenPair(token.userId, context, refreshTokenRepository)
             call.respond(tokenPair)
         } else
@@ -97,11 +97,10 @@ fun Route.register(userRepository: UserRepository, refreshTokenRepository: Refre
             val hashedPassword = Base64.getEncoder().encodeToString(
                 BCrypt.withDefaults().hash(10, loginInput.password.toByteArray(StandardCharsets.UTF_8))
             )
-            val user = userRepository.add(User(email = loginInput.email, hashedPassword = hashedPassword, isAnonymous = false))
-
+            val user =
+                userRepository.add(User(email = loginInput.email, hashedPassword = hashedPassword, isAnonymous = false))
             val tokenPair = generateTokenPair(user.id, context, refreshTokenRepository)
-
-            call.respond(UserResponse(tokenPair, user))
+            call.respond(UserResponse(tokenPair, user.copy(hashedPassword = "", email = "")))
         } else {
 //            error("No such user by that email")
             val newUser = User(email = "", hashedPassword = "", isAnonymous = true)
@@ -150,7 +149,7 @@ private suspend fun generateTokenPair(
         .withIssuer(issuer)
         .sign(secret)
 
-    val refreshToken = UUID.randomUUID().toString()
+    val refreshToken = UUID.randomUUID().toString()  // create JWT
     refreshTokenRepository.setOrUpdate(
         RefreshTokenResponse(
             id = userId,
@@ -159,4 +158,97 @@ private suspend fun generateTokenPair(
         )
     )
     return TokenPairResponse(accessToken, refreshToken)
+}
+
+suspend fun generateChatAccess(
+    sessionId: String,
+    context: ApplicationCall,
+    refreshTokenRepository: RefreshTokenRepository
+): TokenPairResponse {
+
+    val currentTime = System.currentTimeMillis()
+
+    val issuer: String = getEnvironmentString("jwt.issuer", context)
+    val secret = Algorithm.HMAC256(getEnvironmentString("jwt.secret", context))
+    val audience = getEnvironmentString("jwt.audience", context)
+
+    val accessLifetime = longProperty("jwt.access.lifetime", context)    // minutes
+    val refreshLifetime = longProperty("jwt.refresh.lifetime", context)  // days
+//    val dbUsername = stringProperty("authDB.username")
+//    val dbPassword = stringProperty("authDB.password")
+
+    val accessToken = JWT.create()
+        .withSubject(sessionId)
+        .withAudience(audience)
+//        .withExpiresAt(Date(currentTime.withOffset(Duration.ofMinutes(accessLifetime))))
+        .withIssuer(issuer)
+        .sign(secret)
+
+    val refreshToken = UUID.randomUUID().toString()  // create JWT
+    refreshTokenRepository.setOrUpdate(
+        RefreshTokenResponse(
+            id = sessionId,
+            refreshToken = refreshToken,
+            expiresAt = currentTime.withOffset(Duration.ofDays(refreshLifetime))
+        )
+    )
+    return TokenPairResponse(accessToken, refreshToken)
+}
+
+fun createJwtToken(tokenData: TokenData, context: ApplicationCall): String {
+
+
+
+    val secret =
+        Algorithm.HMAC256(System.getProperty("jwt.secret")!!) // environment.config.property("jwt.secret").getString()
+    val currentTime = System.currentTimeMillis()
+    val issuer: String = getEnvironmentString("jwt.issuer", context)
+    val audience = getEnvironmentString("jwt.audience", context)
+    val accessLifetime = longProperty("jwt.access.lifetime", context)    // minutes
+    val refreshLifetime = longProperty("jwt.refresh.lifetime", context)  // days
+
+    return when (tokenData) {
+        is TokenData.AccessTokenPair -> {
+            JWT.create()
+                .withSubject(tokenData.userId)
+                .withAudience(audience)
+                .withExpiresAt(Date(currentTime.withOffset(Duration.ofMinutes(accessLifetime))))
+                .withIssuer(issuer)
+                .sign(secret)
+        }
+        is TokenData.ChatAccessToken -> {
+            JWT.create()
+                .withSubject(tokenData.sessionId)
+                .withAudience(audience)
+                .withExpiresAt(Date(currentTime.withOffset(Duration.ofMinutes(accessLifetime))))
+                .withIssuer(issuer)
+                .sign(secret)
+        }
+        is TokenData.RefreshToken -> {
+            JWT.create()
+                .withSubject(tokenData.userId)
+                .withAudience(audience)
+                .withExpiresAt(Date(currentTime.withOffset(Duration.ofMinutes(refreshLifetime))))
+                .withIssuer(issuer)
+                .sign(secret)
+
+        }
+    }
+
+}
+
+sealed class TokenData {
+    data class AccessTokenPair(
+        val userId: String,
+    ) : TokenData()
+
+    data class RefreshToken(
+        val userId: String,
+    ) : TokenData()
+
+    data class ChatAccessToken(
+        val sessionId: String,
+    ) : TokenData()
+
+
 }

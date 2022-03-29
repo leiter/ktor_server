@@ -1,22 +1,42 @@
 package cut.the.crap.repositories
 
+import com.mongodb.client.model.Filters
+import com.mongodb.client.model.Updates
+import cut.the.crap.data.ChatRoom
 import cut.the.crap.data.Message
 import org.litote.kmongo.coroutine.CoroutineCollection
 import org.litote.kmongo.coroutine.CoroutineDatabase
+import org.litote.kmongo.eq
+
 
 class MessageDataRepository(
     db: CoroutineDatabase
-): Repository<Message> {
+): Repository<ChatRoom> {
 
-    override lateinit var mongoCollection: CoroutineCollection<Message>
+    override lateinit var mongoCollection: CoroutineCollection<ChatRoom>
 
     init {
         mongoCollection = db.getCollection()
     }
 
-    override suspend fun getAll(): List<Message> {
-        return mongoCollection.find()
-            .descendingSort(Message::timestamp)
-            .toList()
+    suspend fun getChatRoom(sessionId: String?) : ChatRoom {
+        if (sessionId.isNullOrEmpty()) return  add(ChatRoom())
+        val room = mongoCollection.findOne(ChatRoom::id eq sessionId)
+        return room ?: kotlin.run {
+//            add(ChatRoom(id = sessionId))
+            add(ChatRoom())
+        }
+    }
+
+    suspend fun getAllChatMessages(sessionId: String?): List<Message> {
+        return if(sessionId==null) emptyList() else getChatRoom(sessionId).allMessages
+    }
+
+    suspend fun addChatMessage(message: Message, sessionId: String) {
+        val chat = getChatRoom(sessionId)
+        val list = chat.allMessages.toMutableList()
+        list.add(message)
+        val update = Updates.push("allMessages",message)
+        mongoCollection.updateOne(Filters.eq("_id", sessionId),update)
     }
 }

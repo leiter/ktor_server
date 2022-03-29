@@ -1,19 +1,22 @@
 package cut.the.crap.repositories
 
+import com.mongodb.client.model.Filters
+import com.mongodb.client.model.UpdateOptions
 import cut.the.crap.data.Model
 import cut.the.crap.data.PropertyNotFoundException
 import org.litote.kmongo.coroutine.CoroutineCollection
 import org.litote.kmongo.eq
 
-interface Repository<T : Any> {
+interface Repository<T : Model> {
 
     var mongoCollection: CoroutineCollection<T>
 
-    suspend fun getById(id: String): T {
+    suspend fun getById(id: String): T? {
         return try {
-            mongoCollection.findOne(Model::id eq id) ?: throw Exception("No item with that ID exists")
+            mongoCollection.findOne(Model::id eq id) //?: throw Exception("No item with that ID exists")
         } catch (t: Throwable) {
-            throw PropertyNotFoundException("Cannot find item")
+            null
+            //throw PropertyNotFoundException("Cannot find item")
         }
     }
 
@@ -31,7 +34,9 @@ interface Repository<T : Any> {
             mongoCollection.findOneAndDelete(Model::id eq id) ?: throw Exception("No item with that Id exists")
             true
         } catch (t: Throwable) {
-            throw Exception("Cannot delete item or item not found")
+            // Log here and find a better solution for setOrUpdate refreshToken
+            // throw Exception("Cannot delete item or item not found")
+            return false
         }
     }
 
@@ -44,9 +49,10 @@ interface Repository<T : Any> {
         }
     }
 
-    suspend fun update(entry: Model): T{
+    suspend fun update(entry: Model) : T {
         return try {
             mongoCollection.updateOneById(Model::id eq entry.id, entry)
+//            mongoCollection.updateOneById(Filters.eq("_id", entry.id), entry)
             mongoCollection.findOne(Model::id eq entry.id) ?: throw PropertyNotFoundException("No item with that id exists")
         }catch (t: Throwable){
             throw Exception("Cannot update item")

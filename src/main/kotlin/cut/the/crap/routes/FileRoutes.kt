@@ -1,18 +1,14 @@
 package cut.the.crap.routes
 
 import cut.the.crap.data.ServerErrorMessage.FileUploadFailed
-import cut.the.crap.repositories.FileMetaData
 import cut.the.crap.repositories.FileMetaDataRepository
 import io.ktor.application.*
 import io.ktor.auth.*
 import io.ktor.auth.jwt.*
 import io.ktor.http.*
-import io.ktor.http.content.*
-import io.ktor.request.*
 import io.ktor.response.*
 import io.ktor.routing.*
 import java.io.File
-import java.util.*
 
 
 fun Route.fileStorage(fileMetaDataRepository: FileMetaDataRepository) {
@@ -64,12 +60,6 @@ fun Route.fileStorage(fileMetaDataRepository: FileMetaDataRepository) {
 
 }
 
-private fun createUniqueName(): String {
-    var name = UUID.randomUUID().toString()
-
-
-    return name
-}
 
 
 //suspend fun ApplicationCall.respondBytesFlow(
