@@ -25,13 +25,13 @@ version = "0.0.1"
 application {
     mainClass.set("io.ktor.server.netty.EngineMain")
     project.setProperty("mainClassName", mainClass.get())
-    applicationDefaultJvmArgs = listOf("-Dfoooooo=ttttt")
-    run {
-
-        val p = Properties()
-        p.load(FileInputStream(file("../keys/vars")))
-        applicationDefaultJvmArgs = listOf("-Djwtsecrete=secret")
-    }
+//    applicationDefaultJvmArgs = listOf("-Dfoooooo=ttttt")
+//    run {
+//
+//        val p = Properties()
+//        p.load(FileInputStream(file("../keys/vars")))
+//        applicationDefaultJvmArgs = listOf("-Djwtsecrete=secret")
+//    }
 }
 
 

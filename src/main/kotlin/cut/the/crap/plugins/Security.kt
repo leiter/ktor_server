@@ -35,7 +35,7 @@ fun Application.configureSecurity() {
     install(Authentication) {
         // Either set -Djwt.secret=whatever in the run configuration or access it like the other properties or hardcode.
         // There are only two occasions
-        val secret = System.getProperty("jwt.secret")!! // environment.config.property("jwt.secret").getString()
+        val secret = environment.config.property("jwt.secret").getString()  //  System.getProperty("jwt.secret")!! //
         val issuer = environment.config.property("jwt.issuer").getString()
         val audience = environment.config.property("jwt.audience").getString()
         val myRealm = environment.config.property("jwt.realm").getString()
@@ -43,6 +43,7 @@ fun Application.configureSecurity() {
         val jwtVerifier = JWT  // make it a function
             .require(Algorithm.HMAC256(secret))
             .withAudience(audience)
+
             .withIssuer(issuer)
             .build()
 
@@ -50,8 +51,10 @@ fun Application.configureSecurity() {
             realm = myRealm
             verifier(jwtVerifier)
             validate { jwtCredential ->
-                val user = userRepository.getById(jwtCredential.payload.subject)  // userId
-                if (user != null) {
+//                val user = userRepository.getById(jwtCredential.payload.subject)  // userId
+//                val user = userRepository.getById(jwtCredential.payload.subject)  // userId
+//                if (user != null) {
+                if (jwtCredential.payload.getClaim("username").asString() != "") {
                     JWTPrincipal(jwtCredential.payload)
                 } else {
                     null
@@ -59,18 +62,18 @@ fun Application.configureSecurity() {
             }
         }
 
-        jwt("chat-authorization") {
-            realm = myRealm
-            verifier(jwtVerifier)
-            validate { jwtCredential ->
-                val user = userRepository.getById(jwtCredential.payload.getClaim("userId").asString())
-                if (user != null) {
-                    JWTPrincipal(jwtCredential.payload)
-                } else {
-                    null
-                }
-            }
-        }
+//        jwt("chat-authorization") {
+////            realm = myRealm
+//            verifier(jwtVerifier)
+//            validate { jwtCredential ->
+//                val user = userRepository.getById(jwtCredential.payload.getClaim("userId").asString())
+//                if (user != null) {
+//                    JWTPrincipal(jwtCredential.payload)
+//                } else {
+//                    null
+//                }
+//            }
+//        }
 
     }
 }

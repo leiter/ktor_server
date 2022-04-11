@@ -42,7 +42,7 @@ fun Route.login(userRepository: UserRepository, refreshTokenRepository: RefreshT
             val principal = call.principal<JWTPrincipal>()!!
             val username = principal.payload.subject //getClaim("username").asString()
             val expiresAt = principal.expiresAt?.time?.minus(System.currentTimeMillis())
-            call.respondText("Hello, $username! Token is expired at $expiresAt ms.")
+            call.respondText("Hello, $username! Token is expired at $expiresAt ms.\n")
         }
     }
 }
@@ -145,7 +145,8 @@ private suspend fun generateTokenPair(
 //    val dbPassword = stringProperty("authDB.password")
 
     val accessToken = JWT.create()
-        .withSubject(userId)
+//        .withSubject(userId)
+        .withClaim("username", "username")
         .withAudience(audience)
         .withExpiresAt(Date(currentTime.withOffset(Duration.ofMinutes(accessLifetime))))
         .withIssuer(issuer)
@@ -182,7 +183,7 @@ suspend fun generateChatAccess(
     val accessToken = JWT.create()
         .withSubject(sessionId)
         .withAudience(audience)
-//        .withExpiresAt(Date(currentTime.withOffset(Duration.ofMinutes(accessLifetime))))
+        .withExpiresAt(Date(currentTime.withOffset(Duration.ofMinutes(accessLifetime))))
         .withIssuer(issuer)
         .sign(secret)
 
