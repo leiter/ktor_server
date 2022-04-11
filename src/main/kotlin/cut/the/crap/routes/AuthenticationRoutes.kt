@@ -36,9 +36,11 @@ fun Route.login(userRepository: UserRepository, refreshTokenRepository: RefreshT
     }
 
     authenticate("auth-jwt") {
+
         get("/hello") {
+
             val principal = call.principal<JWTPrincipal>()!!
-            val username = principal.payload.getClaim("username").asString()
+            val username = principal.payload.subject //getClaim("username").asString()
             val expiresAt = principal.expiresAt?.time?.minus(System.currentTimeMillis())
             call.respondText("Hello, $username! Token is expired at $expiresAt ms.")
         }
@@ -49,7 +51,7 @@ fun Route.refreshToken(refreshTokenRepository: RefreshTokenRepository) {
     post("/refresh") {
         val oldRefreshToken = call.receive<RefreshTokenRequest>()
 
-        val token: RefreshTokenResponse? =
+        val token: RefreshToken? =
             try {
                 refreshTokenRepository.getById(oldRefreshToken.id)
             } catch (e: PropertyNotFoundException) {
@@ -100,7 +102,7 @@ fun Route.register(userRepository: UserRepository, refreshTokenRepository: Refre
             val user =
                 userRepository.add(User(email = loginInput.email, hashedPassword = hashedPassword, isAnonymous = false))
             val tokenPair = generateTokenPair(user.id, context, refreshTokenRepository)
-            call.respond(UserResponse(tokenPair, user.copy(hashedPassword = "", email = "")))
+            call.respond(RegisterUserResponse(tokenPair, user.copy(hashedPassword = "", email = "")))
         } else {
 //            error("No such user by that email")
             val newUser = User(email = "", hashedPassword = "", isAnonymous = true)
@@ -151,7 +153,7 @@ private suspend fun generateTokenPair(
 
     val refreshToken = UUID.randomUUID().toString()  // create JWT
     refreshTokenRepository.setOrUpdate(
-        RefreshTokenResponse(
+        RefreshToken(
             id = userId,
             refreshToken = refreshToken,
             expiresAt = currentTime.withOffset(Duration.ofDays(refreshLifetime))
@@ -186,7 +188,7 @@ suspend fun generateChatAccess(
 
     val refreshToken = UUID.randomUUID().toString()  // create JWT
     refreshTokenRepository.setOrUpdate(
-        RefreshTokenResponse(
+        RefreshToken(
             id = sessionId,
             refreshToken = refreshToken,
             expiresAt = currentTime.withOffset(Duration.ofDays(refreshLifetime))
@@ -196,9 +198,6 @@ suspend fun generateChatAccess(
 }
 
 fun createJwtToken(tokenData: TokenData, context: ApplicationCall): String {
-
-
-
     val secret =
         Algorithm.HMAC256(System.getProperty("jwt.secret")!!) // environment.config.property("jwt.secret").getString()
     val currentTime = System.currentTimeMillis()

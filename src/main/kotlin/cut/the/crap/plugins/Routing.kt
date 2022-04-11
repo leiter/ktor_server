@@ -21,6 +21,7 @@ fun Application.configureRouting() {
     install(Routing) {
         chatSocket(roomController)
         getAllMessages(roomController)
+        socketFactory()
         getNewSessionId(messageDataRepository)
         login(userRepository, refreshTokenRepository)
         register(userRepository, refreshTokenRepository)

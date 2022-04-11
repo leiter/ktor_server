@@ -1,16 +1,15 @@
 package cut.the.crap.data
 
 import io.ktor.http.cio.websocket.*
-import kotlinx.serialization.SerialName
 import org.bson.types.ObjectId
 import kotlinx.serialization.Serializable
 import org.bson.codecs.pojo.annotations.BsonId
 import java.util.regex.Pattern.compile
 
+
 interface Model {
     val id: String
 }
-
 
 
 
@@ -78,7 +77,7 @@ data class RefreshTokenRequest(
 
 // Outgoing
 @Serializable
-data class UserResponse(
+data class RegisterUserResponse(
     val tokenPair: TokenPairResponse,
     val user: User
 )
@@ -95,13 +94,18 @@ data class TokenPairResponse(
 )
 
 @Serializable
-data class RefreshTokenResponse(
+data class RefreshToken(
     override val id: String,
     val refreshToken: String,
     val expiresAt: Long
 ) : Model {
     val userId: String = id
 }
+
+@Serializable
+data class RefreshTokenResponse(
+    val refreshToken: String,
+)
 
 internal data class Member(
     val username: String,

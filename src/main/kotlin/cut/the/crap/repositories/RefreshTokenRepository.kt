@@ -1,17 +1,17 @@
 package cut.the.crap.repositories
 
-import cut.the.crap.data.RefreshTokenResponse
+import cut.the.crap.data.RefreshToken
 import org.litote.kmongo.coroutine.CoroutineCollection
 import org.litote.kmongo.coroutine.CoroutineDatabase
 
-class RefreshTokenRepository(db: CoroutineDatabase) : Repository<RefreshTokenResponse> {
-    override lateinit var mongoCollection: CoroutineCollection<RefreshTokenResponse>
+class RefreshTokenRepository(db: CoroutineDatabase) : Repository<RefreshToken> {
+    override lateinit var mongoCollection: CoroutineCollection<RefreshToken>
 
     init {
         mongoCollection = db.getCollection()
     }
 
-    suspend fun setOrUpdate(entry: RefreshTokenResponse) : RefreshTokenResponse {
+    suspend fun setOrUpdate(entry: RefreshToken) : RefreshToken {
         val refreshToken = mongoCollection.findOneById(entry.id)
         return refreshToken?.let {
             update(entry)
