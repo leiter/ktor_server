@@ -93,7 +93,9 @@ fun Route.register(userRepository: UserRepository, refreshTokenRepository: Refre
         // check if anonymous login
 
         val loginInput = call.receive<UserLoginRequest>()
-        val savedUser = userRepository.getUserByEmail(loginInput.email)
+        val savedUser = if(loginInput.email.isNotBlank())
+                            userRepository.getUserByEmail(loginInput.email)
+                        else null
 
         if (savedUser == null) {
             val hashedPassword = Base64.getEncoder().encodeToString(
@@ -145,8 +147,8 @@ private suspend fun generateTokenPair(
 //    val dbPassword = stringProperty("authDB.password")
 
     val accessToken = JWT.create()
-//        .withSubject(userId)
-        .withClaim("username", "username")
+        .withSubject(userId)
+        .withClaim("username", userId)
         .withAudience(audience)
         .withExpiresAt(Date(currentTime.withOffset(Duration.ofMinutes(accessLifetime))))
         .withIssuer(issuer)

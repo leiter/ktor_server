@@ -24,7 +24,7 @@ fun Route.fileStorage(fileMetaDataRepository: FileMetaDataRepository) {
 //            val fileContext = call.parameters["fileContext"]!!  // avatar, sharable image, ...
             val principal = call.principal<JWTPrincipal>()
             principal?.getClaim("username", String::class)?.let { userId ->
-                val fileMetaData = FileMetaData(displayName = "filename", ownerId = "userId")
+                val fileMetaData = FileMetaData(displayName = "filename", ownerId = userId)
                 val savedMetaData = fileMetaDataRepository.updateOrCreateAvatar(fileMetaData)
 
                 if (savedMetaData.id != fileMetaData.id) {
