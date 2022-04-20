@@ -87,6 +87,15 @@ data class RefreshTokenRequest(
 ) : Model
 
 
+@Serializable
+data class ShoutOut(
+    override val id: String,
+    val text: String,
+    val username: String = "",
+    val timestamp: Long = System.currentTimeMillis(),
+
+) : Model
+
 
 
 // Outgoing

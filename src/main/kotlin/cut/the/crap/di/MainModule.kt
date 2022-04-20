@@ -30,4 +30,7 @@ val mainModule = module {
     single {
         UserRepository(get())
     }
+    single {
+        ShoutOutRepository(get())
+    }
 }

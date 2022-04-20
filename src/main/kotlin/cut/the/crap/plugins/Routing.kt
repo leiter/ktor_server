@@ -15,6 +15,7 @@ fun Application.configureRouting() {
     val refreshTokenRepository by inject<RefreshTokenRepository>()
     val fileMetaDataRepository by inject<FileMetaDataRepository>()
     val messageDataRepository by inject<MessageDataRepository>()
+    val shoutOutRepository by inject<ShoutOutRepository>()
 
     install(Routing) {
         chatSocket(roomController)
@@ -24,6 +25,7 @@ fun Application.configureRouting() {
         login(internalUserRepository, refreshTokenRepository)
         register(userRepository,internalUserRepository, refreshTokenRepository)
         refreshToken(refreshTokenRepository)
+        shoutOut(shoutOutRepository)
         fileStorage(fileMetaDataRepository)
     }
 }
