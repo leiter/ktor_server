@@ -20,18 +20,18 @@ fun Route.fileStorage(fileMetaDataRepository: FileMetaDataRepository) {
 
     authenticate("auth-jwt") {
         post("/upload") {
-//            val filename = call.parameters["filename"]!!
+            val filename = call.parameters["filename"]!!
 //            val fileContext = call.parameters["fileContext"]!!  // avatar, sharable image, ...
             val principal = call.principal<JWTPrincipal>()
             principal?.getClaim("username", String::class)?.let { userId ->
-                val fileMetaData = FileMetaData(displayName = "filename", ownerId = userId)
+                val fileMetaData = FileMetaData(displayName = filename, ownerId = userId)
                 val savedMetaData = fileMetaDataRepository.updateOrCreateAvatar(fileMetaData)
 
-                if (savedMetaData.id != fileMetaData.id) {
-                    val deleteMe = File("$FILE_PATH${fileMetaData.id}")
+                if (savedMetaData.second.isNotBlank()) {
+                    val deleteMe = File("$FILE_PATH${savedMetaData.second}")
                     deleteMe.delete()
                 }
-                val file = File("$FILE_PATH${savedMetaData.id}")
+                val file = File("$FILE_PATH${savedMetaData.first.id}")
                 val multipart = call.receiveMultipart()
                 multipart.forEachPart { part ->
                     if (part is PartData.FileItem) {
@@ -45,23 +45,24 @@ fun Route.fileStorage(fileMetaDataRepository: FileMetaDataRepository) {
                     // make sure to dispose of the part after use to prevent leaks
                     part.dispose()
                 }
-                call.respond(savedMetaData)
+                call.respond(savedMetaData.first)
             } ?: call.respond(HttpStatusCode.Unauthorized, FileUploadFailed)
         }
     }
 
+    authenticate("auth-jwt") {
+        get("/avatar") {
+            val userId = call.principal<JWTPrincipal>()!!.subject!!
+            val fileMetaData = fileMetaDataRepository.getFileMetaOfAvatar(userId)
+            if (fileMetaData != null) {
+                val file = File("$FILE_PATH${fileMetaData.id}")
+                if (file.exists()) {
+                    call.respondFile(file)
+                } else call.respond(HttpStatusCode.NotFound)
 
-    get("/{name}") {
-        // get filename from request url
-        val filename = call.parameters["name"]!!
-        // construct reference to file
-        // ideally this would use a different filename
-        val file = File("$FILE_PATH$filename")
-        if (file.exists()) {
-            call.respondFile(file)
-        } else call.respond(HttpStatusCode.NotFound)
+            } else call.respond(HttpStatusCode.NotFound)
+        }
     }
-
 
 }
 

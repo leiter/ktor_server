@@ -7,25 +7,30 @@ import org.litote.kmongo.coroutine.CoroutineDatabase
 import kotlinx.serialization.Serializable
 import org.litote.kmongo.eq
 
-class FileMetaDataRepository  (db: CoroutineDatabase) : Repository<FileMetaData> {
+class FileMetaDataRepository(db: CoroutineDatabase) : Repository<FileMetaData> {
     override lateinit var mongoCollection: CoroutineCollection<FileMetaData>
 
     init {
         mongoCollection = db.getCollection()
     }
 
-    suspend fun updateOrCreateAvatar(fileMetaData: FileMetaData) : FileMetaData {
+    suspend fun updateOrCreateAvatar(fileMetaData: FileMetaData): Pair<FileMetaData, String> {
         val item = mongoCollection.findOne(FileMetaData::ownerId eq fileMetaData.ownerId)
-        if(item==null) {
+        val id: String
+        if (item == null) {
+            id = ""
             add(fileMetaData)
         } else {
+            id = item.id
             delete(item.id)
             add(fileMetaData)
         }
-        return fileMetaData
+        return Pair(fileMetaData, id)
     }
 
-
+    suspend fun getFileMetaOfAvatar(ownerId: String) : FileMetaData? {
+        return mongoCollection.findOne(FileMetaData::ownerId eq ownerId)
+    }
 
 }
 

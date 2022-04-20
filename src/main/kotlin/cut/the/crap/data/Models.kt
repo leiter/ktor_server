@@ -15,14 +15,28 @@ interface Model {
 
 // Incoming and Outgoing
 @Serializable
-data class User(
+data class InternalUser(
     @BsonId
     override val id: String = ObjectId().toString(),
     val email: String = "",
     val hashedPassword: String,
-    var isAnonymous: Boolean,
+    val exposedId: String
+) : Model
+
+@Serializable
+data class User(
+    @BsonId
+    override val id: String = ObjectId().toString(),
+    var isAnonymous: Boolean = true,
+    var email: String = "",
+    var displayName: String = "",
+    var firstName: String = "",
+    var lastName: String = "",
+    var phoneNumber: String = "",
     val contacts: List<String> = emptyList(),
-    val chatIds: List<String> = emptyList()
+    val chatIds: List<String> = emptyList(),
+    val deviceIds: List<String> = emptyList(),
+
 ) : Model
 
 
@@ -79,7 +93,7 @@ data class RefreshTokenRequest(
 @Serializable
 data class RegisterUserResponse(
     val tokenPair: TokenPairResponse,
-    val user: User
+    val internalUser: User
 )
 
 @Serializable

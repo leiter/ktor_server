@@ -1,10 +1,7 @@
 package cut.the.crap.di
 
 import cut.the.crap.chatroom.RoomController
-import cut.the.crap.repositories.FileMetaDataRepository
-import cut.the.crap.repositories.MessageDataRepository
-import cut.the.crap.repositories.RefreshTokenRepository
-import cut.the.crap.repositories.UserRepository
+import cut.the.crap.repositories.*
 import org.koin.dsl.module
 import org.litote.kmongo.coroutine.coroutine
 import org.litote.kmongo.reactivestreams.KMongo
@@ -22,12 +19,15 @@ val mainModule = module {
         RoomController(get())
     }
     single {
-        UserRepository(get())
+        InternalUserRepository(get())
     }
     single {
         RefreshTokenRepository(get())
     }
     single {
         FileMetaDataRepository(get())
+    }
+    single {
+        UserRepository(get())
     }
 }

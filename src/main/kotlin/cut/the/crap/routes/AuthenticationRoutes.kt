@@ -8,6 +8,7 @@ import cut.the.crap.data.ServerErrorMessage.UserEmailAlreadyExists
 import cut.the.crap.getEnvironmentString
 import cut.the.crap.longProperty
 import cut.the.crap.repositories.RefreshTokenRepository
+import cut.the.crap.repositories.InternalUserRepository
 import cut.the.crap.repositories.UserRepository
 import cut.the.crap.withOffset
 import io.ktor.application.*
@@ -21,11 +22,11 @@ import java.nio.charset.StandardCharsets
 import java.time.Duration
 import java.util.*
 
-fun Route.login(userRepository: UserRepository, refreshTokenRepository: RefreshTokenRepository) {
+fun Route.login(internalUserRepository: InternalUserRepository, refreshTokenRepository: RefreshTokenRepository) {
 
     post("/login") {
         val loginInput = call.receive<UserLoginRequest>()
-        val user = userRepository.getUserByEmail(loginInput.email)  // getById for anonymous
+        val user = internalUserRepository.getUserByEmail(loginInput.email)  // getById for anonymous
         if (user != null && BCrypt.verifyer().verify(
                 loginInput.password.toCharArray(),
                 Base64.getDecoder().decode(user.hashedPassword)
@@ -59,9 +60,8 @@ fun Route.refreshToken(refreshTokenRepository: RefreshTokenRepository) {
             }
 
         val currentTime = System.currentTimeMillis()
-
-//                && token.expiresAt > currentTime
-        if (token != null) {
+//
+        if (token != null) {     //    && token.expiresAt > currentTime
             val tokenPair = generateTokenPair(token.userId, context, refreshTokenRepository)
             call.respond(tokenPair)
         } else
@@ -78,7 +78,7 @@ fun Route.refreshToken(refreshTokenRepository: RefreshTokenRepository) {
     }
 }
 
-fun Route.unregister(userRepository: UserRepository, refreshTokenRepository: RefreshTokenRepository) {
+fun Route.unregister(internalUserRepository: InternalUserRepository, refreshTokenRepository: RefreshTokenRepository) {
     authenticate {
         post("/unregister") {
 
@@ -87,29 +87,40 @@ fun Route.unregister(userRepository: UserRepository, refreshTokenRepository: Ref
 
 }
 
-fun Route.register(userRepository: UserRepository, refreshTokenRepository: RefreshTokenRepository) {
+fun Route.register(
+    userRepository: UserRepository,
+    internalUserRepository: InternalUserRepository,
+    refreshTokenRepository: RefreshTokenRepository
+) {
     post("/register") {
         // add validation
         // check if anonymous login
 
         val loginInput = call.receive<UserLoginRequest>()
-        val savedUser = if(loginInput.email.isNotBlank())
-                            userRepository.getUserByEmail(loginInput.email)
-                        else null
+        val savedUser = if (loginInput.email.isNotBlank())
+            internalUserRepository.getUserByEmail(loginInput.email)
+        else null
 
         if (savedUser == null) {
             val hashedPassword = Base64.getEncoder().encodeToString(
                 BCrypt.withDefaults().hash(10, loginInput.password.toByteArray(StandardCharsets.UTF_8))
             )
-            val user =
-                userRepository.add(User(email = loginInput.email, hashedPassword = hashedPassword, isAnonymous = false))
-            val tokenPair = generateTokenPair(user.id, context, refreshTokenRepository)
-            call.respond(RegisterUserResponse(tokenPair, user.copy(hashedPassword = "", email = "")))
+            val exposedUser = userRepository.add(User(isAnonymous = false, email = loginInput.email))
+            val internalUser = internalUserRepository.add(
+                InternalUser(
+                    email = loginInput.email,
+                    hashedPassword = hashedPassword,
+                    exposedId = exposedUser.id
+                )
+            )
+            val tokenPair = generateTokenPair(internalUser.id, context, refreshTokenRepository)
+            call.respond(RegisterUserResponse(tokenPair, exposedUser))
         } else {
 //            error("No such user by that email")
-            val newUser = User(email = "", hashedPassword = "", isAnonymous = true)
-
-            call.respond(HttpStatusCode.Conflict, UserEmailAlreadyExists(newUser))
+            val exposedUser = userRepository.add(User(isAnonymous = true))
+            val newInternalUser = InternalUser(email = "", hashedPassword = "", exposedId = exposedUser.id)
+            internalUserRepository.add(newInternalUser)
+            call.respond(HttpStatusCode.Conflict, UserEmailAlreadyExists(exposedUser))
         }
     }
 

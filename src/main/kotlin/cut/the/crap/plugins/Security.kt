@@ -3,7 +3,7 @@ package cut.the.crap.plugins
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import cut.the.crap.repositories.MessageDataRepository
-import cut.the.crap.repositories.UserRepository
+import cut.the.crap.repositories.InternalUserRepository
 import cut.the.crap.session.ChatSession
 import io.ktor.sessions.*
 import io.ktor.application.*
@@ -16,7 +16,7 @@ import org.koin.ktor.ext.inject
 fun Application.configureSecurity() {
 
     val messageDataRepository by inject<MessageDataRepository>()
-    val userRepository by inject<UserRepository>()
+    val internalUserRepository by inject<InternalUserRepository>()
 
     install(Sessions) {
         cookie<ChatSession>("SESSION")
@@ -51,10 +51,9 @@ fun Application.configureSecurity() {
             realm = myRealm
             verifier(jwtVerifier)
             validate { jwtCredential ->
-//                val user = userRepository.getById(jwtCredential.payload.subject)  // userId
-//                val user = userRepository.getById(jwtCredential.payload.subject)  // userId
+                val user = internalUserRepository.getUser(jwtCredential.payload.subject)  // userId
 //                if (user != null) {
-                if (jwtCredential.payload.getClaim("username").asString() != "") {
+                if (jwtCredential.payload.getClaim("username").asString() != "" ) {
                     JWTPrincipal(jwtCredential.payload)
                 } else {
                     null

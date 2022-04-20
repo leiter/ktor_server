@@ -3,8 +3,10 @@ package cut.the.crap.routes
 import cut.the.crap.chatroom.RoomController
 import cut.the.crap.data.MemberAlreadyExistsException
 import cut.the.crap.repositories.MessageDataRepository
+import cut.the.crap.repositories.InternalUserRepository
 import cut.the.crap.session.ChatSession
 import io.ktor.application.*
+import io.ktor.auth.*
 import io.ktor.http.*
 import io.ktor.http.cio.websocket.*
 import io.ktor.response.*
@@ -13,19 +15,31 @@ import io.ktor.sessions.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.channels.consumeEach
 
-fun Route.socketFactory() {
-    webSocket("/{soc}") {
-        incoming.consumeEach { frame ->
-            if (frame is Frame.Text) {
-                println(frame.readText())
-            }
-        }
+fun Route.socketFactory(internalUserRepository: InternalUserRepository) {
+
+    get("/user-connect") {
+
     }
+
+    authenticate("auth-jwt") {
+        webSocket("/user-connect/{soc}") {
+            incoming.consumeEach { frame ->
+                if (frame is Frame.Text) {
+                    println(frame.readText())
+                }
+            }
+
+        }
+
+    }
+
 }
 
 
 fun Route.chatSocket(roomController: RoomController) {
-    // use jwt here
+
+
+//    use jwt here
 //    authenticate("chat-authorization"){
 
     webSocket("/chat-socket") {  // maybe use path instead of param
