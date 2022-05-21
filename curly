@@ -1,0 +1,63 @@
+## GLOBAL VARIABLES
+
+MONGO_DB_NAME="stage_database"
+
+ACCESS_PORT="8181"
+
+
+IS_LOCAL=0  # 0 for local 	1 for remote
+IS_HTTPS=0  # 0 is http 	1 for https
+
+
+CURRENT_ACCESS_TOKEN=""
+CURRENT_REFRESH_TOKEN=""
+CURRENT_BASE_URL=""
+
+REGISTER_DATA=("-d" '{"email":"leiter@arcor.de", "password":"123456"}')
+CONTENT_TYPE_HEADER=("-H" "Content-Type: application/json")
+
+
+KTOR_HOST=
+
+
+
+function setKtorHost() {
+	if [[ IS_LOCAL -eq 0 ]]; then KTOR_HOST="localhost"; else KTOR_HOST="153.92.221.202"; fi
+}
+
+setKtorHost
+
+function register() { 
+	local t=$( curl -k -H "Content-Type: application/json" -X POST -d '{"email":"leiter@arcor.de", "password":"123456"}' http://$KTOR_HOST:8181/register ); 
+	CURRENT_ACCESS_TOKEN=$( echo $t | sed 's,\([^[,]]*\).\,.*,\1,; s,.*accessToken...\(.*\),\1,' ); 
+	CURRENT_REFRESH_TOKEN=$( echo $t| sed 's,.*refreshToken...\([A-Z0-9a-z\-]*\).*,\1,' ); 
+	echo $t
+}
+
+
+function login() {
+	local t=$( curl -k -H "Content-Type: application/json" -X POST -d '{"email":"leiter@arcor.de", "password":"123456"}' http://$KTOR_HOST:8181/login ); 
+	CURRENT_ACCESS_TOKEN=$( echo $t | sed 's,\([^[,]]*\).\,.*,\1,; s,.*accessToken...\(.*\),\1,' ); 
+	CURRENT_REFRESH_TOKEN=$( echo $t| sed 's,.*refreshToken...\([A-Z0-9a-z\-]*\).*,\1,' ); 
+	echo $t
+}
+
+function getFriends() {
+	local t=$( curl -k -H "Content-Type: application/json" -X POST -d '{"email":"user1@gmail.de", "_id":"1", "contacts":["2","3"]}' http://$KTOR_HOST:8181/friends );
+	echo $t
+}
+
+
+function getURL() {
+	local path=$1
+	 
+}
+
+
+# curl -k -H "Content-Type: application/json" -X POST -d '{"email":"leiter@arcor.de", "password":"123456"}' http://localhost:8181/login
+# curl -k -H "Content-Type: application/json" -X POST -d '{"email":"leiter@arco.de", "password":"123456"}' http://localhost:8181/refreshToken
+
+# curl -H "Content-Type: application/json" -d '{"username":"marcoleiter@arcor.de", "password":"123456"}' -o /dev/null -s -w "%{http_code}\n" -X POST http://localhost:8082/login
+
+
+

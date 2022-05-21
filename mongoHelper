@@ -1,0 +1,50 @@
+MONGO_DB_NAME="stage_database"
+USER_ID_1=1
+USER_ID_2=2
+USER_ID_3=3
+
+
+# mongo --eval 'db.user.insert({"email":"asdfas@gmial.de"});' $MONGO_DB_NAME
+
+function insertUsers() {
+	mongo --eval 'db.user.insert({ "_id":"1", "isAnonymous": false, "email":"user1@gmail.de", "contacts":["2","3"]});' $MONGO_DB_NAME
+	mongo --eval 'db.user.insert({ "_id":"2", "isAnonymous": true, "email":"user2@gmail.de"});' $MONGO_DB_NAME
+	mongo --eval 'db.user.insert({ "_id":"3", "isAnonymous": false, "email":"user3@gmail.de"});' $MONGO_DB_NAME
+
+}
+
+
+
+function dropUsers() {
+	mongo --eval 'db.user.drop();' $MONGO_DB_NAME
+}
+
+function dropMessage() {
+	mongo --eval 'db.chatRoom.drop();' $MONGO_DB_NAME
+}
+
+function dropRefreshToken() {
+	mongo --eval 'db.refreshToken.drop();' $MONGO_DB_NAME
+}
+
+function dropfileMetaData() {
+	mongo --eval 'db.fileMetaData.drop();' $MONGO_DB_NAME
+}
+
+function dropShoutOut() {
+	mongo --eval 'db.shoutOut.drop();' $MONGO_DB_NAME
+}
+
+function dropInternalUser() {
+	mongo --eval 'db.internalUser.drop();' $MONGO_DB_NAME
+}
+
+function dropAllTables() {
+	dropUsers
+	dropMessage
+	dropRefreshToken
+	dropfileMetaData
+	dropShoutOut
+	dropInternalUser
+}
+
