@@ -1,6 +1,6 @@
 package cut.the.crap.repositories
 
-import cut.the.crap.data.InternalUser
+import cut.the.crap.common.InternalUser
 import cut.the.crap.data.UserNotFoundException
 import org.litote.kmongo.coroutine.CoroutineCollection
 import org.litote.kmongo.coroutine.CoroutineDatabase
@@ -24,7 +24,7 @@ class InternalUserRepository(db: CoroutineDatabase) : Repository<InternalUser> {
 
     suspend fun getUser(id: String? = null): InternalUser? {
         return try {
-            mongoCollection.findOne(InternalUser::id eq id)
+            mongoCollection.findOne(InternalUser::_id eq id)
         } catch (t: Throwable) {
             throw UserNotFoundException("Cannot get user with that email", t)
         }

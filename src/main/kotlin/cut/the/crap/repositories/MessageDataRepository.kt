@@ -2,8 +2,8 @@ package cut.the.crap.repositories
 
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Updates
-import cut.the.crap.data.ChatRoom
-import cut.the.crap.data.Message
+import cut.the.crap.common.ChatRoom
+import cut.the.crap.common.Message
 import org.litote.kmongo.coroutine.CoroutineCollection
 import org.litote.kmongo.coroutine.CoroutineDatabase
 import org.litote.kmongo.eq
@@ -21,7 +21,7 @@ class MessageDataRepository(
 
     suspend fun getChatRoom(sessionId: String?) : ChatRoom {
         if (sessionId.isNullOrEmpty()) return  add(ChatRoom())
-        val room = mongoCollection.findOne(ChatRoom::id eq sessionId)
+        val room = mongoCollection.findOne(ChatRoom::_id eq sessionId)
         return room ?: kotlin.run {
 //            add(ChatRoom(id = sessionId))
             add(ChatRoom())

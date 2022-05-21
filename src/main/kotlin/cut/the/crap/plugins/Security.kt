@@ -23,7 +23,7 @@ fun Application.configureSecurity() {
     }
 
     intercept(ApplicationCallPipeline.Features) {
-        val sessionId = messageDataRepository.getChatRoom(call.parameters["sessionId"]).id
+        val sessionId = messageDataRepository.getChatRoom(call.parameters["sessionId"])._id
 //        messageDataRepository.getAllChatMessages(sessionId)
         if (call.sessions.get<ChatSession>() == null ) {
             val username = call.parameters["username"] ?: "Guest"
@@ -51,9 +51,11 @@ fun Application.configureSecurity() {
             realm = myRealm
             verifier(jwtVerifier)
             validate { jwtCredential ->
-                val user = internalUserRepository.getUser(jwtCredential.payload.subject)  // userId
+                val user = internalUserRepository.getUser(jwtCredential.payload.subject)
 //                if (user != null) {
-                if (jwtCredential.payload.getClaim("username").asString() != "" ) {
+                if (user != null) { //                    jwtCredential.payload.getClaim("username").asString() != null &&
+//                    println(user.id)
+//                    println(jwtCredential.payload.subject)
                     JWTPrincipal(jwtCredential.payload)
                 } else {
                     null

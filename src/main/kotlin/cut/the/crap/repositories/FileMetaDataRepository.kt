@@ -1,6 +1,7 @@
 package cut.the.crap.repositories
 
-import cut.the.crap.data.Model
+import cut.the.crap.Model
+import cut.the.crap.data.FileMetaData
 import org.bson.types.ObjectId
 import org.litote.kmongo.coroutine.CoroutineCollection
 import org.litote.kmongo.coroutine.CoroutineDatabase
@@ -21,8 +22,8 @@ class FileMetaDataRepository(db: CoroutineDatabase) : Repository<FileMetaData> {
             id = ""
             add(fileMetaData)
         } else {
-            id = item.id
-            delete(item.id)
+            id = item._id
+            delete(item._id)
             add(fileMetaData)
         }
         return Pair(fileMetaData, id)
@@ -34,9 +35,3 @@ class FileMetaDataRepository(db: CoroutineDatabase) : Repository<FileMetaData> {
 
 }
 
-@Serializable
-data class FileMetaData(
-    override val id: String = ObjectId().toString(),
-    val displayName: String,
-    val ownerId: String,
-) : Model

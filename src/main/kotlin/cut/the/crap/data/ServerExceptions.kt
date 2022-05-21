@@ -1,5 +1,6 @@
 package cut.the.crap.data
 
+import cut.the.crap.common.User
 import io.ktor.http.*
 
 @kotlinx.serialization.Serializable

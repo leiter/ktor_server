@@ -1,8 +1,6 @@
 package cut.the.crap.repositories
 
-import com.mongodb.client.model.Filters
-import com.mongodb.client.model.UpdateOptions
-import cut.the.crap.data.Model
+import cut.the.crap.Model
 import cut.the.crap.data.PropertyNotFoundException
 import org.litote.kmongo.coroutine.CoroutineCollection
 import org.litote.kmongo.eq
@@ -13,7 +11,7 @@ interface Repository<T : Model> {
 
     suspend fun getById(id: String): T? {
         return try {
-            mongoCollection.findOne(Model::id eq id) //?: throw Exception("No item with that ID exists")
+            mongoCollection.findOne(Model::_id eq id) //?: throw Exception("No item with that ID exists")
         } catch (t: Throwable) {
             null
             //throw PropertyNotFoundException("Cannot find item")
@@ -31,7 +29,7 @@ interface Repository<T : Model> {
 
     suspend fun delete(id: String): Boolean {
         return try {
-            mongoCollection.findOneAndDelete(Model::id eq id) ?: throw Exception("No item with that Id exists")
+            mongoCollection.findOneAndDelete(Model::_id eq id) ?: throw Exception("No item with that Id exists")
             true
         } catch (t: Throwable) {
             // Log here and find a better solution for setOrUpdate refreshToken
@@ -51,9 +49,10 @@ interface Repository<T : Model> {
 
     suspend fun update(entry: Model) : T {
         return try {
-            mongoCollection.updateOneById(Model::id eq entry.id, entry)
+            mongoCollection.updateOneById(Model::_id eq entry._id, entry,)
 //            mongoCollection.updateOneById(Filters.eq("_id", entry.id), entry)
-            mongoCollection.findOne(Model::id eq entry.id) ?: throw PropertyNotFoundException("No item with that id exists")
+            mongoCollection.findOne(Model::_id eq entry._id) ?: throw PropertyNotFoundException("No item with that id exists")
+
         }catch (t: Throwable){
             throw Exception("Cannot update item")
         }
@@ -61,7 +60,7 @@ interface Repository<T : Model> {
 
 //    suspend fun uniqueId(entry: T): String {
 //        var newId = entry.id
-//        while (mongoCollection.findOne(Model::id eq newId) != null){
+//        while (mongoCollection.findOne(Model::_id eq newId) != null){
 //            newId = ObjectId().toString()
 //        }
 //        return newId

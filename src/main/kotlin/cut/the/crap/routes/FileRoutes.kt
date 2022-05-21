@@ -1,7 +1,7 @@
 package cut.the.crap.routes
 
+import cut.the.crap.data.FileMetaData
 import cut.the.crap.data.ServerErrorMessage.FileUploadFailed
-import cut.the.crap.repositories.FileMetaData
 import cut.the.crap.repositories.FileMetaDataRepository
 import io.ktor.application.*
 import io.ktor.auth.*
@@ -31,7 +31,7 @@ fun Route.fileStorage(fileMetaDataRepository: FileMetaDataRepository) {
                     val deleteMe = File("$FILE_PATH${savedMetaData.second}")
                     deleteMe.delete()
                 }
-                val file = File("$FILE_PATH${savedMetaData.first.id}")
+                val file = File("$FILE_PATH${savedMetaData.first._id}")
                 val multipart = call.receiveMultipart()
                 multipart.forEachPart { part ->
                     if (part is PartData.FileItem) {
@@ -55,7 +55,7 @@ fun Route.fileStorage(fileMetaDataRepository: FileMetaDataRepository) {
             val userId = call.principal<JWTPrincipal>()!!.subject!!
             val fileMetaData = fileMetaDataRepository.getFileMetaOfAvatar(userId)
             if (fileMetaData != null) {
-                val file = File("$FILE_PATH${fileMetaData.id}")
+                val file = File("$FILE_PATH${fileMetaData._id}")
                 if (file.exists()) {
                     call.respondFile(file)
                 } else call.respond(HttpStatusCode.NotFound)

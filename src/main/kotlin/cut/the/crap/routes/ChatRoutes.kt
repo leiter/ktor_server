@@ -81,7 +81,7 @@ fun Route.chatSocket(roomController: RoomController) {
 
 fun Route.getNewSessionId(messageDataRepository: MessageDataRepository) {
     get("/newSessionId") {
-        val sessionId = messageDataRepository.getChatRoom(call.parameters["sessionId"]).id
+        val sessionId = messageDataRepository.getChatRoom(call.parameters["sessionId"])._id
         call.respond(sessionId)
     }
 }

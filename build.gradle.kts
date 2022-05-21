@@ -30,7 +30,7 @@ application {
 //
 //        val p = Properties()
 //        p.load(FileInputStream(file("../keys/vars")))
-//        applicationDefaultJvmArgs = listOf("-Djwtsecrete=secret")
+//        applicationDefaultJvmArgs = listOf("-Djwt.secrete=secret")
 //    }
 }
 
@@ -39,6 +39,10 @@ application {
 repositories {
     mavenCentral()
     gradlePluginPortal()
+    maven {
+        url = uri("https://jitpack.io")
+    }
+
 }
 
 
@@ -47,6 +51,11 @@ repositories {
 val sshAntTask = configurations.create("sshAntTask")
 
 dependencies {
+
+    implementation ("com.github.leiter:data_contract:0.3-SNAPSHOT")
+
+    implementation("org.jetbrains.kotlin:kotlin-reflect:$kotlin_version")
+
     implementation("io.ktor:ktor-server-core:$ktor_version")
     implementation("io.ktor:ktor-websockets:$ktor_version")
     implementation("io.ktor:ktor-serialization:$ktor_version")
@@ -58,6 +67,7 @@ dependencies {
 
     testImplementation("io.ktor:ktor-server-tests:$ktor_version")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
+    testImplementation(kotlin("test"))
 
     // KMongo
     implementation("org.litote.kmongo:kmongo:$kmongo_version")

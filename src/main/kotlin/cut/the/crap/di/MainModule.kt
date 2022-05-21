@@ -33,4 +33,7 @@ val mainModule = module {
     single {
         ShoutOutRepository(get())
     }
+    single {
+        PlacesRepository(get())
+    }
 }

@@ -1,8 +1,8 @@
 package cut.the.crap.chatroom
 
+import cut.the.crap.common.Message
 import cut.the.crap.data.Member
 import cut.the.crap.data.MemberAlreadyExistsException
-import cut.the.crap.data.Message
 import cut.the.crap.repositories.MessageDataRepository
 import io.ktor.http.cio.websocket.*
 import kotlinx.serialization.encodeToString

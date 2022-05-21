@@ -1,16 +1,18 @@
 package cut.the.crap.routes
 
 import at.favre.lib.crypto.bcrypt.BCrypt
-import com.auth0.jwt.JWT
-import com.auth0.jwt.algorithms.Algorithm
+import cut.the.crap.common.InternalUser
+import cut.the.crap.common.RefreshToken
+import cut.the.crap.common.User
 import cut.the.crap.data.*
 import cut.the.crap.data.ServerErrorMessage.UserEmailAlreadyExists
-import cut.the.crap.getEnvironmentString
-import cut.the.crap.longProperty
-import cut.the.crap.repositories.RefreshTokenRepository
 import cut.the.crap.repositories.InternalUserRepository
+import cut.the.crap.repositories.RefreshTokenRepository
 import cut.the.crap.repositories.UserRepository
-import cut.the.crap.withOffset
+import cut.the.crap.requests.RefreshTokenRequest
+import cut.the.crap.requests.UserLoginRequest
+import cut.the.crap.response.RegisterUserResponse
+import cut.the.crap.utils.generateTokenPair
 import io.ktor.application.*
 import io.ktor.auth.*
 import io.ktor.auth.jwt.*
@@ -19,7 +21,6 @@ import io.ktor.request.*
 import io.ktor.response.*
 import io.ktor.routing.*
 import java.nio.charset.StandardCharsets
-import java.time.Duration
 import java.util.*
 
 fun Route.login(internalUserRepository: InternalUserRepository, refreshTokenRepository: RefreshTokenRepository) {
@@ -32,19 +33,8 @@ fun Route.login(internalUserRepository: InternalUserRepository, refreshTokenRepo
                 Base64.getDecoder().decode(user.hashedPassword)
             ).verified
         ) {
-            call.respond(generateTokenPair(user.id, context, refreshTokenRepository))
+            call.respond(generateTokenPair(user._id, context, refreshTokenRepository))
         } else call.respond(HttpStatusCode.Unauthorized)  // add error message
-    }
-
-    authenticate("auth-jwt") {
-
-        get("/hello") {
-
-            val principal = call.principal<JWTPrincipal>()!!
-            val username = principal.payload.subject //getClaim("username").asString()
-            val expiresAt = principal.expiresAt?.time?.minus(System.currentTimeMillis())
-            call.respondText("Hello, $username! Token is expired at $expiresAt ms.\n")
-        }
     }
 }
 
@@ -54,7 +44,7 @@ fun Route.refreshToken(refreshTokenRepository: RefreshTokenRepository) {
 
         val token: RefreshToken? =
             try {
-                refreshTokenRepository.getById(oldRefreshToken.id)
+                refreshTokenRepository.getById(oldRefreshToken._id)
             } catch (e: PropertyNotFoundException) {
                 null
             }
@@ -110,21 +100,21 @@ fun Route.register(
                 InternalUser(
                     email = loginInput.email,
                     hashedPassword = hashedPassword,
-                    exposedId = exposedUser.id
+                    exposedId = exposedUser._id
                 )
             )
-            val tokenPair = generateTokenPair(internalUser.id, context, refreshTokenRepository)
+            val tokenPair = generateTokenPair(internalUser._id, context, refreshTokenRepository)
             call.respond(RegisterUserResponse(tokenPair, exposedUser))
         } else {
 //            error("No such user by that email")
             val exposedUser = userRepository.add(User(isAnonymous = true))
-            val newInternalUser = InternalUser(email = "", hashedPassword = "", exposedId = exposedUser.id)
+            val newInternalUser = InternalUser(email = "", hashedPassword = "", exposedId = exposedUser._id)
             internalUserRepository.add(newInternalUser)
             call.respond(HttpStatusCode.Conflict, UserEmailAlreadyExists(exposedUser))
         }
     }
 
-    //    fun verifyToken(call: ApplicationCall): User? {
+//    fun verifyToken(call: ApplicationCall): User? {
 //        return try {
 //            val authHeader = call.request.headers["Authorization"] ?: ""
 //            val token = authHeader.split("Bearer ").last()
@@ -139,129 +129,3 @@ fun Route.register(
 
 }
 
-
-private suspend fun generateTokenPair(
-    userId: String,
-    context: ApplicationCall,
-    refreshTokenRepository: RefreshTokenRepository
-): TokenPairResponse {
-
-    val currentTime = System.currentTimeMillis()
-
-    val issuer: String = getEnvironmentString("jwt.issuer", context)
-    val secret = Algorithm.HMAC256(getEnvironmentString("jwt.secret", context))
-    val audience = getEnvironmentString("jwt.audience", context)
-
-    val accessLifetime = longProperty("jwt.access.lifetime", context)    // minutes
-    val refreshLifetime = longProperty("jwt.refresh.lifetime", context)  // days
-//    val dbUsername = stringProperty("authDB.username")
-//    val dbPassword = stringProperty("authDB.password")
-
-    val accessToken = JWT.create()
-        .withSubject(userId)
-        .withClaim("username", userId)
-        .withAudience(audience)
-        .withExpiresAt(Date(currentTime.withOffset(Duration.ofMinutes(accessLifetime))))
-        .withIssuer(issuer)
-        .sign(secret)
-
-    val refreshToken = UUID.randomUUID().toString()  // create JWT
-    refreshTokenRepository.setOrUpdate(
-        RefreshToken(
-            id = userId,
-            refreshToken = refreshToken,
-            expiresAt = currentTime.withOffset(Duration.ofDays(refreshLifetime))
-        )
-    )
-    return TokenPairResponse(accessToken, refreshToken)
-}
-
-suspend fun generateChatAccess(
-    sessionId: String,
-    context: ApplicationCall,
-    refreshTokenRepository: RefreshTokenRepository
-): TokenPairResponse {
-
-    val currentTime = System.currentTimeMillis()
-
-    val issuer: String = getEnvironmentString("jwt.issuer", context)
-    val secret = Algorithm.HMAC256(getEnvironmentString("jwt.secret", context))
-    val audience = getEnvironmentString("jwt.audience", context)
-
-    val accessLifetime = longProperty("jwt.access.lifetime", context)    // minutes
-    val refreshLifetime = longProperty("jwt.refresh.lifetime", context)  // days
-//    val dbUsername = stringProperty("authDB.username")
-//    val dbPassword = stringProperty("authDB.password")
-
-    val accessToken = JWT.create()
-        .withSubject(sessionId)
-        .withAudience(audience)
-        .withExpiresAt(Date(currentTime.withOffset(Duration.ofMinutes(accessLifetime))))
-        .withIssuer(issuer)
-        .sign(secret)
-
-    val refreshToken = UUID.randomUUID().toString()  // create JWT
-    refreshTokenRepository.setOrUpdate(
-        RefreshToken(
-            id = sessionId,
-            refreshToken = refreshToken,
-            expiresAt = currentTime.withOffset(Duration.ofDays(refreshLifetime))
-        )
-    )
-    return TokenPairResponse(accessToken, refreshToken)
-}
-
-fun createJwtToken(tokenData: TokenData, context: ApplicationCall): String {
-    val secret =
-        Algorithm.HMAC256(System.getProperty("jwt.secret")!!) // environment.config.property("jwt.secret").getString()
-    val currentTime = System.currentTimeMillis()
-    val issuer: String = getEnvironmentString("jwt.issuer", context)
-    val audience = getEnvironmentString("jwt.audience", context)
-    val accessLifetime = longProperty("jwt.access.lifetime", context)    // minutes
-    val refreshLifetime = longProperty("jwt.refresh.lifetime", context)  // days
-
-    return when (tokenData) {
-        is TokenData.AccessTokenPair -> {
-            JWT.create()
-                .withSubject(tokenData.userId)
-                .withAudience(audience)
-                .withExpiresAt(Date(currentTime.withOffset(Duration.ofMinutes(accessLifetime))))
-                .withIssuer(issuer)
-                .sign(secret)
-        }
-        is TokenData.ChatAccessToken -> {
-            JWT.create()
-                .withSubject(tokenData.sessionId)
-                .withAudience(audience)
-                .withExpiresAt(Date(currentTime.withOffset(Duration.ofMinutes(accessLifetime))))
-                .withIssuer(issuer)
-                .sign(secret)
-        }
-        is TokenData.RefreshToken -> {
-            JWT.create()
-                .withSubject(tokenData.userId)
-                .withAudience(audience)
-                .withExpiresAt(Date(currentTime.withOffset(Duration.ofMinutes(refreshLifetime))))
-                .withIssuer(issuer)
-                .sign(secret)
-
-        }
-    }
-
-}
-
-sealed class TokenData {
-    data class AccessTokenPair(
-        val userId: String,
-    ) : TokenData()
-
-    data class RefreshToken(
-        val userId: String,
-    ) : TokenData()
-
-    data class ChatAccessToken(
-        val sessionId: String,
-    ) : TokenData()
-
-
-}
